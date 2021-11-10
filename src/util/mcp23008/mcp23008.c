@@ -1,6 +1,6 @@
 #include "mcp23008.h"
 
-#include <delay.h>
+#include "util/delay/delay.h"
 #include <libopencm3/stm32/i2c.h>
 
 static uint8_t _i2c_addr;

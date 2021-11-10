@@ -1,7 +1,7 @@
 #include "i2c_lcd.h"
 
-#include <delay.h>
-#include <mcp23008.h>
+#include "util/delay/delay.h"
+#include "util/mcp23008/mcp23008.h"
 #include <string.h>
 
 uint8_t _displayfunction;
