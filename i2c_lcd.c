@@ -14,6 +14,8 @@ uint8_t _numlines;
 uint8_t _row_offsets[4];
 
 void lcd_init(uint8_t cols, uint8_t lines, uint8_t dotsize) {
+  delay_setup();
+  
   mcp23008_init(I2C_ADDR, RS, EN, DB4, DB5, DB6, DB7);
 
   _displayfunction = LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS;  // default config
