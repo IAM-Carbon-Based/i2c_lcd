@@ -81,6 +81,9 @@ void setCursor(uint8_t, uint8_t);
 void command(uint8_t data);
 void write(uint8_t data);
 
+void backlight_init(void);
+void backlight_set_color(const uint32_t color);
+
 size_t print(const char str[]);
 
 #endif

@@ -1,8 +1,12 @@
 #include "i2c_lcd.h"
 
+#include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/rcc.h>
+#include <libopencm3/stm32/timer.h>
+#include <string.h>
+
 #include "util/delay/delay.h"
 #include "util/mcp23008/mcp23008.h"
-#include <string.h>
 
 uint8_t _displayfunction;
 uint8_t _displaycontrol;
@@ -15,7 +19,10 @@ uint8_t _row_offsets[4];
 
 void lcd_init(uint8_t cols, uint8_t lines, uint8_t dotsize) {
   delay_setup();
-  
+  backlight_init();
+
+  backlight_set_color(0x00FF1A);
+
   mcp23008_init(I2C_ADDR, RS, EN, DB4, DB5, DB6, DB7);
 
   _displayfunction = LCD_4BITMODE | LCD_1LINE | LCD_5x8DOTS;  // default config
@@ -186,6 +193,55 @@ size_t print(const char str[]) {
   // return n;
 }
 
+void backlight_init() {
+  rcc_periph_clock_enable(RCC_GPIOB);
+  rcc_periph_clock_enable(RCC_TIM3);
+  rcc_periph_reset_pulse(RST_TIM3);
+
+  gpio_mode_setup(GPIOB, GPIO_MODE_AF, GPIO_PUPD_NONE, GPIO0 | GPIO4 | GPIO5);
+
+  gpio_set_output_options(GPIOB, GPIO_OTYPE_PP, GPIO_OSPEED_50MHZ,
+                          GPIO0 | GPIO4 | GPIO5);
+
+  gpio_set_af(GPIOB, GPIO_AF2, GPIO0 | GPIO4 | GPIO5);
+
+  timer_set_mode(TIM3, TIM_CR1_CKD_CK_INT, TIM_CR1_CMS_EDGE, TIM_CR1_DIR_UP);
+  timer_enable_preload(TIM3);
+  timer_enable_oc_preload(TIM3, TIM_OC1);
+
+  timer_set_prescaler(TIM3, 100000000 / 63750 - 1);
+  timer_set_period(TIM3, 0xFF);
+
+  timer_enable_oc_output(TIM3, TIM_OC1);
+  timer_enable_oc_output(TIM3, TIM_OC2);
+  timer_enable_oc_output(TIM3, TIM_OC3);
+
+  timer_set_oc_mode(TIM3, TIM_OC1, TIM_OCM_PWM1);
+  timer_set_oc_mode(TIM3, TIM_OC2, TIM_OCM_PWM1);
+  timer_set_oc_mode(TIM3, TIM_OC3, TIM_OCM_PWM1);
+
+  timer_set_oc_polarity_high(TIM3, TIM_OC1);
+  timer_set_oc_polarity_high(TIM3, TIM_OC2);
+  timer_set_oc_polarity_high(TIM3, TIM_OC3);
+
+  timer_set_oc_slow_mode(TIM3, TIM_OC1);
+  timer_set_oc_slow_mode(TIM3, TIM_OC2);
+  timer_set_oc_slow_mode(TIM3, TIM_OC3);
+
+  // timer_set_oc_value(TIM3, TIM_OC1, 0x88);
+  // timer_set_oc_value(TIM3, TIM_OC2, 0x44);
+  // timer_set_oc_value(TIM3, TIM_OC3, 0x22);
+
+  timer_generate_event(TIM3, TIM_EGR_UG);
+  timer_enable_counter(TIM3);
+}
+
+void backlight_set_color(const uint32_t color) {
+  timer_set_oc_value(TIM3, TIM_OC1, ((color >> 16) & 0xFF));
+  timer_set_oc_value(TIM3, TIM_OC2, ((color >> 8) & 0xFF));
+  timer_set_oc_value(TIM3, TIM_OC3, (color & 0xFF));
+}
+
 void command(uint8_t data) {
   i2c_write_4bits(data >> 4, 0x00);  // set RS pin LOW - send command
   i2c_write_4bits(data, 0x00);
@@ -195,5 +251,3 @@ void write(uint8_t data) {
   i2c_write_4bits(data >> 4, 0x01);  // Set RS pin HIGH - Write to DDRAM/CGRAM
   i2c_write_4bits(data, 0x01);
 }
-
-
