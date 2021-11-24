@@ -1,12 +1,37 @@
 #ifndef I2C_LCD_H
 #define I2C_LCD_H
 
+#include <libopencm3/stm32/gpio.h>
+#include <libopencm3/stm32/i2c.h>
+#include <libopencm3/stm32/rcc.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 
 // 7-Bit Address of mcp23008 / LCD
 #define I2C_ADDR 0x20
+
+// i2c peripheral defines
+#define I2C_PERIPH I2C1
+#define I2C_RCC RCC_I2C1
+
+#define I2C_GPIO_PORT GPIOB
+#define I2C_GPIO_RCC RCC_GPIOB
+#define I2C_SDA GPIO7
+#define I2C_SCL GPIO6
+
+// MCP23008 Register Addresses (only uncommented registers are used)
+#define IODIR 0x00
+// #define IPOL 0x01
+// #define GPINTEN 0x02
+// #define DEFVAL 0x03
+// #define INTCON 0x04
+#define IOCON 0x05
+// #define GPPU 0x06
+// #define INTF 0x07
+// #define INTCAP 0x08
+#define GPIO 0x09
+// #define OLAT 0x0A
 
 // Pins used on the mcp23008
 #define RS 2
@@ -56,10 +81,21 @@
 #define LCD_5x10DOTS 0x04
 #define LCD_5x8DOTS 0x00
 
+// initialization functions
+void _init_i2c(uint8_t addr);
+void _init_mcp23008_io(void);
+
+void _mcp23008_init(uint8_t addr, uint8_t rs, uint8_t en, uint8_t db4,
+                    uint8_t db5, uint8_t db6, uint8_t db7);
+
+void _backlight_init(void);
+
 void lcd_init(uint8_t cols, uint8_t lines, uint8_t dotsize);
 
+// LCD Functions
 void clear(void);
 void home(void);
+void backlight_set_color(const uint32_t color);
 
 void noDisplay(void);
 void display(void);
@@ -80,9 +116,7 @@ void setCursor(uint8_t, uint8_t);
 
 void command(uint8_t data);
 void write(uint8_t data);
-
-void backlight_init(void);
-void backlight_set_color(const uint32_t color);
+void i2c_write_4bits(uint8_t data, uint8_t mode);
 
 size_t print(const char str[]);
 
