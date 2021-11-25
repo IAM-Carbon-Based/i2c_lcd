@@ -81,15 +81,6 @@
 #define LCD_5x10DOTS 0x04
 #define LCD_5x8DOTS 0x00
 
-// initialization functions
-void _init_i2c(uint8_t addr);
-void _init_mcp23008_io(void);
-
-void _mcp23008_init(uint8_t addr, uint8_t rs, uint8_t en, uint8_t db4,
-                    uint8_t db5, uint8_t db6, uint8_t db7);
-
-void _backlight_init(void);
-
 void lcd_init(uint8_t cols, uint8_t lines, uint8_t dotsize);
 
 // LCD Functions

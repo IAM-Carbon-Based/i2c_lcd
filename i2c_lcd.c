@@ -22,11 +22,14 @@ static uint8_t _rs;
 static uint8_t _en;
 static uint8_t _data_pins[4];
 
-/**
- * @brief initialize i2c
- * Only Tested on STM32F411CE
- */
-void _init_i2c(uint8_t addr) {
+// initialization function declarations
+static void _init_i2c(uint8_t addr);
+static void _mcp23008_init(uint8_t addr, uint8_t rs, uint8_t en, uint8_t db4,
+                           uint8_t db5, uint8_t db6, uint8_t db7);
+static void _init_mcp23008_io(void);
+static void _backlight_init(void);
+
+static void _init_i2c(uint8_t addr) {
   rcc_periph_clock_enable(I2C_RCC);
   rcc_periph_clock_enable(I2C_GPIO_RCC);
 
@@ -46,8 +49,8 @@ void _init_i2c(uint8_t addr) {
   i2c_peripheral_enable(I2C_PERIPH);
 }
 
-void _mcp23008_init(uint8_t addr, uint8_t rs, uint8_t en, uint8_t db4,
-                    uint8_t db5, uint8_t db6, uint8_t db7) {
+static void _mcp23008_init(uint8_t addr, uint8_t rs, uint8_t en, uint8_t db4,
+                           uint8_t db5, uint8_t db6, uint8_t db7) {
   _i2c_addr = addr;
   _rs = rs;
   _en = en;
@@ -60,7 +63,7 @@ void _mcp23008_init(uint8_t addr, uint8_t rs, uint8_t en, uint8_t db4,
   _init_mcp23008_io();
 }
 
-void _init_mcp23008_io(void) {
+static void _init_mcp23008_io(void) {
   // Initialize MCP23008, Disable sequential operation, Set all pins output/low
   uint8_t disable_SEQOP[] = {IOCON, GPIO5};
   uint8_t set_all_output[] = {IODIR, 0x00};
@@ -71,7 +74,7 @@ void _init_mcp23008_io(void) {
   i2c_transfer7(I2C_PERIPH, _i2c_addr, set_output_low, 2, 0, 0);
 }
 
-void _backlight_init() {
+static void _backlight_init() {
   rcc_periph_clock_enable(RCC_GPIOB);
   rcc_periph_clock_enable(RCC_TIM3);
   rcc_periph_reset_pulse(RST_TIM3);
@@ -338,7 +341,8 @@ void i2c_write_4bits(uint8_t data, uint8_t mode) {
 
   i2c_send_start(I2C_PERIPH);
 
-  // Wait for the end of the start condition, master mode selected, and BUSY bit set
+  // Wait for the end of the start condition, master mode selected, and BUSY bit
+  // set
   while (!((I2C_SR1(I2C_PERIPH) & I2C_SR1_SB) &&
            (I2C_SR2(I2C_PERIPH) & I2C_SR2_MSL) &&
            (I2C_SR2(I2C_PERIPH) & I2C_SR2_BUSY)))
